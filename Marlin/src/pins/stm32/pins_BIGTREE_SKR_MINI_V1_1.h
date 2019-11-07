@@ -45,14 +45,28 @@
 #define E2END                (EEPROM_PAGE_SIZE - 1)
 
 //
+// Servos
+//
+#define SERVO0_PIN         PB8
+
+//
+// Z Probe must be this pin
+//
+#define Z_MIN_PROBE_PIN    PB9
+
+//
 // Limit Switches
 //
-#define X_MIN_PIN          PC2
-#define X_MAX_PIN          PA2
-#define Y_MIN_PIN          PC1
-#define Y_MAX_PIN          PA1
-#define Z_MIN_PIN          PC0
-#define Z_MAX_PIN          PC3
+#define X_STOP_PIN         PC2
+#define Y_STOP_PIN         PC1
+#define Z_STOP_PIN         PC0
+
+//
+// Filament Runout Sensor
+//
+#if ENABLED(FILAMENT_RUNOUT_SENSOR)
+  #define FIL_RUNOUT_PIN   PC3
+#endif
 
 //
 // Steppers
@@ -74,17 +88,38 @@
 #define E0_DIR_PIN         PB0
 #define E0_ENABLE_PIN      PC4
 
-#if ENABLED(TMC_USE_SW_SPI)
-  #ifndef TMC_SW_MOSI
-    #define TMC_SW_SCK     PB3
-  #endif
-  #ifndef TMC_SW_MISO
-    #define TMC_SW_MISO    PB4
-  #endif
-  #ifndef TMC_SW_SCK
-    #define TMC_SW_MOSI    PB5
-  #endif
-#endif
+// #if ENABLED(TMC_USE_SW_SPI)
+//   #ifndef TMC_SW_MOSI
+//     #define TMC_SW_SCK     PB3
+//   #endif
+//   #ifndef TMC_SW_MISO
+//     #define TMC_SW_MISO    PB4
+//   #endif
+//   #ifndef TMC_SW_SCK
+//     #define TMC_SW_MOSI    PB5
+//   #endif
+// #endif
+
+//#if HAS_TRINAMIC
+  /**
+   * TMC2208/TMC2209 stepper drivers
+   */
+  //
+  // Software serial
+  //
+  //#define X_SERIAL_TX_PIN  PA2
+  //#define X_SERIAL_RX_PIN  PA2
+
+  //#define Y_SERIAL_TX_PIN  PA1
+  //#define Y_SERIAL_RX_PIN  PA1
+
+  //#define Z_SERIAL_TX_PIN  PC3
+  //#define Z_SERIAL_RX_PIN  PC3
+
+  //#define E0_SERIAL_TX_PIN PC11
+  //#define E0_SERIAL_RX_PIN PC11
+//#endif
+
 
 //
 // Heaters / Fans
@@ -131,8 +166,8 @@
 
     #define LCD_PINS_RS      PC12
 
-    #define BTN_EN1          PD2
-    #define BTN_EN2          PB8
+    //#define BTN_EN1          PD2
+    //#define BTN_EN2          PB8
 
     #define LCD_PINS_ENABLE  PB6
 
