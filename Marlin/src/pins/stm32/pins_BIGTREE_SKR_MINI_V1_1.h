@@ -100,25 +100,25 @@
 //   #endif
 // #endif
 
-//#if HAS_TRINAMIC
+#if HAS_TRINAMIC
   /**
    * TMC2208/TMC2209 stepper drivers
    */
   //
   // Software serial
   //
-  //#define X_SERIAL_TX_PIN  PA2
-  //#define X_SERIAL_RX_PIN  PA2
+  #define X_SERIAL_TX_PIN  PB4
+  #define X_SERIAL_RX_PIN  PB4
 
-  //#define Y_SERIAL_TX_PIN  PA1
-  //#define Y_SERIAL_RX_PIN  PA1
+  #define Y_SERIAL_TX_PIN  PB3
+  #define Y_SERIAL_RX_PIN  PB3
 
-  //#define Z_SERIAL_TX_PIN  PC3
-  //#define Z_SERIAL_RX_PIN  PC3
+  #define Z_SERIAL_TX_PIN  PD2
+  #define Z_SERIAL_RX_PIN  PD2
 
-  //#define E0_SERIAL_TX_PIN PC11
-  //#define E0_SERIAL_RX_PIN PC11
-//#endif
+  #define E0_SERIAL_TX_PIN PA15
+  #define E0_SERIAL_RX_PIN PA15
+#endif
 
 
 //
