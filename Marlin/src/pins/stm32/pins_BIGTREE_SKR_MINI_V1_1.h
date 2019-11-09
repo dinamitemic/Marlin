@@ -33,11 +33,8 @@
 // Ignore temp readings during development.
 //#define BOGUS_TEMPERATURE_GRACE_PERIOD 2000
 
-#ifdef MCU_STM32F103RE
-  #define STM32_FLASH_SIZE (512 * 1024)
-#else
-  #define STM32_FLASH_SIZE (256 * 1024)
-#endif
+
+#define STM32_FLASH_SIZE (512 * 1024)
 
 #define FLASH_EEPROM_EMULATION
 #define EEPROM_PAGE_SIZE     (0x800) // 2KB
@@ -105,24 +102,34 @@
 * TMC2208/TMC2209 stepper drivers
 */
 #if HAS_TMC220x
+  /**
+   * TMC2208/TMC2209 stepper drivers
+   *
+   * Hardware serial communication ports.
+   * If undefined software serial is used according to the pins below
+   */
+  //#define X_HARDWARE_SERIAL  Serial1
+  //#define Y_HARDWARE_SERIAL  Serial1
+  //#define Z_HARDWARE_SERIAL  Serial1
+  //#define E0_HARDWARE_SERIAL Serial1
+
   //
   // Software serial
   //
-  #define X_SERIAL_TX_PIN  PB4
-  #define X_SERIAL_RX_PIN  PB4
+  #define X_SERIAL_TX_PIN  PC10
+  #define X_SERIAL_RX_PIN  PC10
 
-  #define Y_SERIAL_TX_PIN  PB3
-  #define Y_SERIAL_RX_PIN  PB3
+  #define Y_SERIAL_TX_PIN  PC11
+  #define Y_SERIAL_RX_PIN  PC11
 
-  #define Z_SERIAL_TX_PIN  PD2
-  #define Z_SERIAL_RX_PIN  PD2
+  #define Z_SERIAL_TX_PIN  PC12
+  #define Z_SERIAL_RX_PIN  PC12
 
-  #define E0_SERIAL_TX_PIN PA15
-  #define E0_SERIAL_RX_PIN PA15
+  #define E0_SERIAL_TX_PIN PB6
+  #define E0_SERIAL_RX_PIN PB6
 
   // Reduce baud rate to improve software serial reliability
-  #define TMC_BAUD_RATE 19200 
-  
+  #define TMC_BAUD_RATE 19200  
 #endif
 
 
@@ -146,76 +153,30 @@
 /**
  *                _____                                             _____
  *            NC | · · | GND                                    5V | · · | GND
- *         RESET | · · | PB9 (SD_DETECT)             (LCD_D7) PC14 | · · | PC15 (LCD_D6)
- *  (MOSI)   PB5 | · · | PB8 (BTN_EN2)               (LCD_D5)  PB7 | · · | PC13 (LCD_D4)
- * (SD_SS)  PA15 | · · | PD2 (BTN_EN1)               (LCD_RS) PC12 | · · | PB6  (LCD_EN)
- *   (SCK)   PB3 | · · | PB4 (MISO)                 (BTN_ENC) PC11 | · · | PC10 (BEEPER)
+ *         RESET | · · | PB9 (PROBE)                       () PC14 | · · | PC15 ()
+ * (BTN_EN1) PB5 | · · | PB8 (SERVO)                       ()  PB7 | · · | PC13 ()
+ * (LCD_RS) PA15 | · · | PD2 (LCD_EN)                (UART_Z) PC12 | · · | PB6  (UART_E)
+ * (BTN_ENC) PB3 | · · | PB4 (LCD_D4)                (UART_Y) PC11 | · · | PC10 (UART_X)
  *                -----                                             -----
  *                EXP2                                              EXP1
  */
 
+
 #if HAS_SPI_LCD
-  #define BEEPER_PIN       PC10
-  #define BTN_ENC          PC11
+  //#define BEEPER_PIN       PB4
+  //#define BTN_ENC          PB3
 
   #if ENABLED(CR10_STOCKDISPLAY)
     #define LCD_PINS_RS    PC15
 
-    #define BTN_EN1        PB6
-    #define BTN_EN2        PC13
+    //#define BTN_EN1        PB5
+    //#define BTN_EN2        PB9
 
-    #define LCD_PINS_ENABLE PC14
-    #define LCD_PINS_D4    PB7
+    #define LCD_PINS_ENABLE PD2
+    #define LCD_PINS_D4    PB4
 
   #else
-
-    #define LCD_PINS_RS      PC12
-
-    //#define BTN_EN1          PD2
-    //#define BTN_EN2          PB8
-
-    #define LCD_PINS_ENABLE  PB6
-
-    #if ENABLED(FYSETC_MINI_12864)
-
-      #define LCD_BACKLIGHT_PIN -1
-      #define LCD_RESET_PIN  PC13
-      #define DOGLCD_A0      PC12
-      #define DOGLCD_CS      PB6
-      #define DOGLCD_SCK     PB3
-      #define DOGLCD_MOSI    PB5
-
-      #define FORCE_SOFT_SPI   // SPI MODE3
-
-      #define LED_PIN        PB7   // red pwm
-      //#define LED_PIN        PC15   // green
-      //#define LED_PIN        PC14   // blue
-
-      //#if EITHER(FYSETC_MINI_12864_1_2, FYSETC_MINI_12864_2_0)
-      //  #ifndef RGB_LED_R_PIN
-      //    #define RGB_LED_R_PIN PB7
-      //  #endif
-      //  #ifndef RGB_LED_G_PIN
-      //    #define RGB_LED_G_PIN PC15
-      //  #endif
-      //  #ifndef RGB_LED_B_PIN
-      //    #define RGB_LED_B_PIN PC14
-      //  #endif
-      //#elif ENABLED(FYSETC_MINI_12864_2_1)
-      //  #define NEOPIXEL_PIN    PB7
-      //#endif
-
-    #else // !FYSETC_MINI_12864
-
-    #define LCD_PINS_D4    PC13
-    #if ENABLED(ULTIPANEL)
-      #define LCD_PINS_D5  PB7
-      #define LCD_PINS_D6  PC15
-      #define LCD_PINS_D7  PC14
-    #endif
-
-    #endif // !FYSETC_MINI_12864
-
+    #error "Only CR10_STOCKDISPLAY is currently supported on the BIGTREE_SKR_E3_DIP."
   #endif
 
 #endif // HAS_SPI_LCD
