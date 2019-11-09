@@ -99,11 +99,12 @@
 //     #define TMC_SW_MOSI    PB5
 //   #endif
 // #endif
-
-#if HAS_TRINAMIC
-  /**
-   * TMC2208/TMC2209 stepper drivers
-   */
+ 
+ 
+/**
+* TMC2208/TMC2209 stepper drivers
+*/
+#if HAS_TMC220x
   //
   // Software serial
   //
@@ -118,6 +119,10 @@
 
   #define E0_SERIAL_TX_PIN PA15
   #define E0_SERIAL_RX_PIN PA15
+
+  // Reduce baud rate to improve software serial reliability
+  #define TMC_BAUD_RATE 19200 
+  
 #endif
 
 
