@@ -102,34 +102,27 @@
 * TMC2208/TMC2209 stepper drivers
 */
 #if HAS_TMC220x
-  /**
-   * TMC2208/TMC2209 stepper drivers
-   *
-   * Hardware serial communication ports.
-   * If undefined software serial is used according to the pins below
-   */
-  //#define X_HARDWARE_SERIAL  Serial1
-  //#define Y_HARDWARE_SERIAL  Serial1
-  //#define Z_HARDWARE_SERIAL  Serial1
-  //#define E0_HARDWARE_SERIAL Serial1
-
   //
   // Software serial
   //
-  #define X_SERIAL_TX_PIN  PC10
-  #define X_SERIAL_RX_PIN  PC10
+  // PLEASE NOTE: In order to get it working you have to 
+  // remove all jumpers under the drivers
+  //
+  #define X_SERIAL_TX_PIN  PB4
+  #define X_SERIAL_RX_PIN  PB4
 
-  #define Y_SERIAL_TX_PIN  PC11
-  #define Y_SERIAL_RX_PIN  PC11
+  #define Y_SERIAL_TX_PIN  PB3
+  #define Y_SERIAL_RX_PIN  PB3
 
-  #define Z_SERIAL_TX_PIN  PC12
-  #define Z_SERIAL_RX_PIN  PC12
+  #define Z_SERIAL_TX_PIN  PD2
+  #define Z_SERIAL_RX_PIN  PD2
 
-  #define E0_SERIAL_TX_PIN PB6
-  #define E0_SERIAL_RX_PIN PB6
+  #define E0_SERIAL_TX_PIN PA15
+  #define E0_SERIAL_RX_PIN PA15
 
   // Reduce baud rate to improve software serial reliability
-  #define TMC_BAUD_RATE 19200  
+  #define TMC_BAUD_RATE 19200 
+  
 #endif
 
 
@@ -151,32 +144,44 @@
 //
 
 /**
- *                _____                                             _____
- *            NC | · · | GND                                    5V | · · | GND
- *         RESET | · · | PB9 (PROBE)                       () PC14 | · · | PC15 ()
- * (BTN_EN1) PB5 | · · | PB8 (SERVO)                       ()  PB7 | · · | PC13 ()
- * (LCD_RS) PA15 | · · | PD2 (LCD_EN)                (UART_Z) PC12 | · · | PB6  (UART_E)
- * (BTN_ENC) PB3 | · · | PB4 (LCD_D4)                (UART_Y) PC11 | · · | PC10 (UART_X)
- *                -----                                             -----
- *                EXP2                                              EXP1
+ *                _____                                                    _____
+ *            NC | · · | GND                                           5V | · · | GND
+ *         RESET | · · | PB9 (PROBE)                              () PC14 | · · | PC15 (BTN_EN1)
+ * ()        PB5 | · · | PB8 (SERVO)                       (BTN_EN2)  PB7 | · · | PC13 (LCD_D4)
+ * (UART_E) PA15 | · · | PD2 (UART_Z)                      (LCD_RS)  PC12 | · · | PB6  (LCD_EN)
+ * (UART_Y)  PB3 | · · | PB4 (UART_X)                      (BTN_ENC) PC11 | · · | PC10 (BEEPER)
+ *                -----                                                    -----
+ *                EXP2                                                     EXP1
  */
 
 
+/*
+  PLEASE NOTE: 
+  Connect EXP1 on SKR to EXP1 in LCD reversed. 
+  Encoder will not work anymore but button is still working.
+  Have to modify the connector on the LCD side to 
+  connect BTN_EN1 and BTN_EN2 on EXP2. 
+*/
+
 #if HAS_SPI_LCD
-  //#define BEEPER_PIN       PB4
-  //#define BTN_ENC          PB3
+  #define BEEPER_PIN       PC10
+  #define BTN_ENC          PC11
 
   #if ENABLED(CR10_STOCKDISPLAY)
-    #define LCD_PINS_RS    PC15
-
-    //#define BTN_EN1        PB5
-    //#define BTN_EN2        PB9
-
-    #define LCD_PINS_ENABLE PD2
-    #define LCD_PINS_D4    PB4
+    //TODO: look at SKR_MINI_E3_DIP and rearrange
 
   #else
-    #error "Only CR10_STOCKDISPLAY is currently supported on the BIGTREE_SKR_E3_DIP."
+
+    //RepRapDiscount FULL GRAPHIC Smart Controller
+
+    #define LCD_PINS_RS    PC12
+
+    #define BTN_EN1        PC15
+    #define BTN_EN2        PB7
+
+    #define LCD_PINS_ENABLE PB6
+    #define LCD_PINS_D4    PC13
+    
   #endif
 
 #endif // HAS_SPI_LCD
