@@ -118,7 +118,7 @@
   #define E0_SERIAL_RX_PIN PA15
 
   // Reduce baud rate to improve software serial reliability
-  #define TMC_BAUD_RATE 19200 
+  //#define TMC_BAUD_RATE 19200 
   
 #endif
 
@@ -154,10 +154,9 @@
 
 /*
   PLEASE NOTE: 
-  Connect EXP1 on SKR to EXP1 in LCD reversed. 
-  Encoder will not work anymore but button is still working.
-  Have to modify the connector on the LCD side to 
-  connect BTN_EN1 and BTN_EN2 on EXP2. 
+  This is a customized pinout in order to get all the connection
+  on only one connector and then modify it on display side.
+  Still under test, when it's done I'll update this file. 
 */
 
 #if HAS_SPI_LCD
