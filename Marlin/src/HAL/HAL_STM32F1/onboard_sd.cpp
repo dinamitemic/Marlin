@@ -1,7 +1,7 @@
 /**
  * STM32F1: MMCv3/SDv1/SDv2 (SPI mode) control module
  *
- * Copyright (c) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  * Copyright (c) 2019 BigTreeTech [https://github.com/bigtreetech]
  * Copyright (C) 2015, ChaN, all right reserved.
  *
@@ -36,8 +36,8 @@
   #define SPI_CLOCK_MAX SPI_BAUD_PCLK_DIV_2
 #endif
 
-#define CS_LOW()  {WRITE(ONBOARD_SD_CS_PIN, LOW);}  /* Set OnBoardSPI cs low */
-#define CS_HIGH() {WRITE(ONBOARD_SD_CS_PIN, HIGH);} /* Set OnBoardSPI cs high */
+#define CS_LOW()  WRITE(ONBOARD_SD_CS_PIN, LOW)  /* Set OnBoardSPI cs low */
+#define CS_HIGH() WRITE(ONBOARD_SD_CS_PIN, HIGH) /* Set OnBoardSPI cs high */
 
 #define FCLK_FAST() ONBOARD_SD_SPI.setClockDivider(SPI_CLOCK_MAX)
 #define FCLK_SLOW() ONBOARD_SD_SPI.setClockDivider(SPI_BAUD_PCLK_DIV_256)

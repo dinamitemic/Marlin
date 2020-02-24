@@ -1,6 +1,6 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (c) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
  * Based on Sprinter and grbl.
  * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
@@ -26,7 +26,7 @@
 
   #include "../bedlevel.h"
 
-  #include "../../../Marlin.h"
+  #include "../../../MarlinCore.h"
   #include "../../../HAL/shared/persistent_store_api.h"
   #include "../../../libs/hex_print_routines.h"
   #include "../../../module/configuration_store.h"
@@ -38,7 +38,7 @@
   #include "../../../gcode/gcode.h"
   #include "../../../libs/least_squares_fit.h"
 
-  #if ENABLED(DUAL_X_CARRIAGE)
+  #if HOTENDS > 1
     #include "../../../module/tool_change.h"
   #endif
 
@@ -305,12 +305,15 @@
 
     const int8_t p_val = parser.intval('P', -1);
     const bool may_move = p_val == 1 || p_val == 2 || p_val == 4 || parser.seen('J');
+    #if HOTENDS > 1
+      const uint8_t old_tool_index = active_extruder;
+    #endif
 
     // Check for commands that require the printer to be homed
     if (may_move) {
       planner.synchronize();
       if (axes_need_homing()) gcode.home_all_axes();
-      #if ENABLED(DUAL_X_CARRIAGE)
+      #if HOTENDS > 1
         if (active_extruder != 0) tool_change(0);
       #endif
     }
@@ -450,7 +453,7 @@
               SERIAL_ECHO(g29_pos.y);
               SERIAL_ECHOLNPGM(").\n");
             }
-            const xy_pos_t near = g29_pos + probe_offset;
+            const xy_pos_t near = g29_pos + probe.offset_xy;
             probe_entire_mesh(near, parser.seen('T'), parser.seen('E'), parser.seen('U'));
 
             report_current_position();
@@ -468,6 +471,7 @@
             do_blocking_move_to_z(Z_CLEARANCE_BETWEEN_PROBES);
 
             if (parser.seen('C') && !xy_seen) {
+
               /**
                * Use a good default location for the path.
                * The flipped > and < operators in these comparisons is intentional.
@@ -479,8 +483,8 @@
                 #if IS_KINEMATIC
                   X_HOME_POS, Y_HOME_POS
                 #else
-                  probe_offset.x > 0 ? X_BED_SIZE : 0,
-                  probe_offset.y < 0 ? Y_BED_SIZE : 0
+                  probe.offset_xy.x > 0 ? X_BED_SIZE : 0,
+                  probe.offset_xy.y < 0 ? Y_BED_SIZE : 0
                 #endif
               );
             }
@@ -683,6 +687,9 @@
       UNUSED(probe_deployed);
     #endif
 
+    #if HOTENDS > 1
+      tool_change(old_tool_index);
+    #endif
     return;
   }
 
@@ -741,13 +748,13 @@
      * This attempts to fill in locations closest to the nozzle's start location first.
      */
     void unified_bed_leveling::probe_entire_mesh(const xy_pos_t &near, const bool do_ubl_mesh_map, const bool stow_probe, const bool do_furthest) {
+      probe.deploy(); // Deploy before ui.capture() to allow for PAUSE_BEFORE_DEPLOY_STOW
+
       #if HAS_LCD_MENU
         ui.capture();
       #endif
 
       save_ubl_active_state_and_disable();  // No bed level correction so only raw data is obtained
-      DEPLOY_PROBE();
-
       uint8_t count = GRID_MAX_POINTS;
 
       mesh_index_pair best;
@@ -764,10 +771,10 @@
           if (ui.button_pressed()) {
             ui.quick_feedback(false); // Preserve button state for click-and-hold
             SERIAL_ECHOLNPGM("\nMesh only partially populated.\n");
-            STOW_PROBE();
             ui.wait_for_release();
             ui.quick_feedback();
             ui.release();
+            probe.stow(); // Release UI before stow to allow for PAUSE_BEFORE_DEPLOY_STOW
             return restore_ubl_active_state_and_leave();
           }
         #endif
@@ -777,7 +784,7 @@
           : find_closest_mesh_point_of_type(INVALID, near, true);
 
         if (best.pos.x >= 0) {    // mesh point found and is reachable by probe
-          const float measured_z = probe_at_point(
+          const float measured_z = probe.probe_at_point(
                         best.meshpos(),
                         stow_probe ? PROBE_PT_STOW : PROBE_PT_RAISE, g29_verbose_level
                       );
@@ -790,17 +797,23 @@
 
       } while (best.pos.x >= 0 && --count);
 
-      STOW_PROBE();
+      #if HAS_LCD_MENU
+        ui.release();
+      #endif
+      probe.stow(); // Release UI during stow to allow for PAUSE_BEFORE_DEPLOY_STOW
+      #if HAS_LCD_MENU
+        ui.capture();
+      #endif
 
       #ifdef Z_AFTER_PROBING
-        move_z_after_probing();
+        probe.move_z_after_probing();
       #endif
 
       restore_ubl_active_state_and_leave();
 
       do_blocking_move_to_xy(
-        constrain(near.x - probe_offset.x, MESH_MIN_X, MESH_MAX_X),
-        constrain(near.y - probe_offset.y, MESH_MIN_Y, MESH_MAX_Y)
+        constrain(near.x - probe.offset_xy.x, MESH_MIN_X, MESH_MAX_X),
+        constrain(near.y - probe.offset_xy.y, MESH_MIN_Y, MESH_MAX_Y)
       );
     }
 
@@ -849,7 +862,9 @@
     static void echo_and_take_a_measurement() { SERIAL_ECHOLNPGM(" and take a measurement."); }
 
     float unified_bed_leveling::measure_business_card_thickness(float in_height) {
-      ui.capture();
+      #if HAS_LCD_MENU
+        ui.capture();
+      #endif
       save_ubl_active_state_and_disable();   // Disable bed level correction for probing
 
       do_blocking_move_to(0.5f * (MESH_MAX_X - (MESH_MIN_X)), 0.5f * (MESH_MAX_Y - (MESH_MIN_Y)), in_height);
@@ -888,8 +903,9 @@
     }
 
     void unified_bed_leveling::manually_probe_remaining_mesh(const xy_pos_t &pos, const float &z_clearance, const float &thick, const bool do_ubl_mesh_map) {
-
-      ui.capture();
+      #if HAS_LCD_MENU
+        ui.capture();
+      #endif
 
       save_ubl_active_state_and_disable();  // No bed level correction so only raw data is obtained
       do_blocking_move_to_xy_z(current_position, z_clearance);
@@ -897,7 +913,7 @@
       ui.return_to_status();
 
       mesh_index_pair location;
-      xy_int8_t &lpos = location.pos;
+      const xy_int8_t &lpos = location.pos;
       do {
         location = find_closest_mesh_point_of_type(INVALID, pos);
         // It doesn't matter if the probe can't reach the NAN location. This is a manual probe.
@@ -917,7 +933,9 @@
         do_blocking_move_to_z(z_clearance);
 
         KEEPALIVE_STATE(PAUSED_FOR_USER);
-        ui.capture();
+        #if HAS_LCD_MENU
+          ui.capture();
+        #endif
 
         if (do_ubl_mesh_map) display_map(g29_map_type);  // show user where we're probing
 
@@ -984,8 +1002,9 @@
       save_ubl_active_state_and_disable();
 
       LCD_MESSAGEPGM(MSG_UBL_FINE_TUNE_MESH);
-      ui.capture();                                         // Take over control of the LCD encoder
-
+      #if HAS_LCD_MENU
+        ui.capture();                                         // Take over control of the LCD encoder
+      #endif
       do_blocking_move_to_xy_z(pos, Z_CLEARANCE_BETWEEN_PROBES); // Move to the given XY with probe clearance
 
       #if ENABLED(UBL_MESH_EDIT_MOVES_Z)
@@ -993,7 +1012,7 @@
       #endif
 
       MeshFlags done_flags{0};
-      xy_int8_t &lpos = location.pos;
+      const xy_int8_t &lpos = location.pos;
       do {
         location = find_closest_mesh_point_of_type(SET_IN_BITMAP, pos, false, &done_flags);
 
@@ -1281,7 +1300,7 @@
     closest.distance = -99999.9f;
 
     // Get the reference position, either nozzle or probe
-    const xy_pos_t ref = probe_relative ? pos + probe_offset : pos;
+    const xy_pos_t ref = probe_relative ? pos + probe.offset_xy : pos;
 
     float best_so_far = 99999.99f;
 
@@ -1380,22 +1399,13 @@
     #include "../../../libs/vector_3.h"
 
     void unified_bed_leveling::tilt_mesh_based_on_probed_grid(const bool do_3_pt_leveling) {
-      const float x_min = probe_min_x(), x_max = probe_max_x(),
-                  y_min = probe_min_y(), y_max = probe_max_y(),
+      const float x_min = probe.min_x(), x_max = probe.max_x(),
+                  y_min = probe.min_y(), y_max = probe.max_y(),
                   dx = (x_max - x_min) / (g29_grid_size - 1),
                   dy = (y_max - y_min) / (g29_grid_size - 1);
 
-      const vector_3 points[3] = {
-        #if ENABLED(HAS_FIXED_3POINT)
-          { PROBE_PT_1_X, PROBE_PT_1_Y, 0 },
-          { PROBE_PT_2_X, PROBE_PT_2_Y, 0 },
-          { PROBE_PT_3_X, PROBE_PT_3_Y, 0 }
-        #else
-          { x_min, y_min, 0 },
-          { x_max, y_min, 0 },
-          { (x_max - x_min) / 2, y_max, 0 }
-        #endif
-      };
+      xy_float_t points[3];
+      probe.get_three_points(points);
 
       float measured_z;
       bool abort_flag = false;
@@ -1413,7 +1423,7 @@
           ui.status_printf_P(0, PSTR(S_FMT " 1/3"), GET_TEXT(MSG_LCD_TILTING_MESH));
         #endif
 
-        measured_z = probe_at_point(points[0], PROBE_PT_RAISE, g29_verbose_level);
+        measured_z = probe.probe_at_point(points[0], PROBE_PT_RAISE, g29_verbose_level);
         if (isnan(measured_z))
           abort_flag = true;
         else {
@@ -1434,7 +1444,7 @@
             ui.status_printf_P(0, PSTR(S_FMT " 2/3"), GET_TEXT(MSG_LCD_TILTING_MESH));
           #endif
 
-          measured_z = probe_at_point(points[1], PROBE_PT_RAISE, g29_verbose_level);
+          measured_z = probe.probe_at_point(points[1], PROBE_PT_RAISE, g29_verbose_level);
           #ifdef VALIDATE_MESH_TILT
             z2 = measured_z;
           #endif
@@ -1456,7 +1466,7 @@
             ui.status_printf_P(0, PSTR(S_FMT " 3/3"), GET_TEXT(MSG_LCD_TILTING_MESH));
           #endif
 
-          measured_z = probe_at_point(points[2], PROBE_PT_STOW, g29_verbose_level);
+          measured_z = probe.probe_at_point(points[2], PROBE_PT_STOW, g29_verbose_level);
           #ifdef VALIDATE_MESH_TILT
             z3 = measured_z;
           #endif
@@ -1472,9 +1482,9 @@
           }
         }
 
-        STOW_PROBE();
+        probe.stow();
         #ifdef Z_AFTER_PROBING
-          move_z_after_probing();
+          probe.move_z_after_probing();
         #endif
 
         if (abort_flag) {
@@ -1500,24 +1510,26 @@
                 ui.status_printf_P(0, PSTR(S_FMT " %i/%i"), GET_TEXT(MSG_LCD_TILTING_MESH), point_num, total_points);
               #endif
 
-              measured_z = probe_at_point(rpos, parser.seen('E') ? PROBE_PT_STOW : PROBE_PT_RAISE, g29_verbose_level); // TODO: Needs error handling
+              measured_z = probe.probe_at_point(rpos, parser.seen('E') ? PROBE_PT_STOW : PROBE_PT_RAISE, g29_verbose_level); // TODO: Needs error handling
 
               abort_flag = isnan(measured_z);
 
-              if (DEBUGGING(LEVELING)) {
-                const xy_pos_t lpos = rpos.asLogical();
-                DEBUG_CHAR('(');
-                DEBUG_ECHO_F(rpos.x, 7);
-                DEBUG_CHAR(',');
-                DEBUG_ECHO_F(rpos.y, 7);
-                DEBUG_ECHOPAIR_F(")   logical: (", lpos.x, 7);
-                DEBUG_CHAR(',');
-                DEBUG_ECHO_F(lpos.y, 7);
-                DEBUG_ECHOPAIR_F(")   measured: ", measured_z, 7);
-                DEBUG_ECHOPAIR_F("   correction: ", get_z_correction(rpos), 7);
-              }
+              #if ENABLED(DEBUG_LEVELING_FEATURE)
+                if (DEBUGGING(LEVELING)) {
+                  const xy_pos_t lpos = rpos.asLogical();
+                  DEBUG_CHAR('(');
+                  DEBUG_ECHO_F(rpos.x, 7);
+                  DEBUG_CHAR(',');
+                  DEBUG_ECHO_F(rpos.y, 7);
+                  DEBUG_ECHOPAIR_F(")   logical: (", lpos.x, 7);
+                  DEBUG_CHAR(',');
+                  DEBUG_ECHO_F(lpos.y, 7);
+                  DEBUG_ECHOPAIR_F(")   measured: ", measured_z, 7);
+                  DEBUG_ECHOPAIR_F("   correction: ", get_z_correction(rpos), 7);
+                }
+              #endif
 
-              measured_z -= get_z_correction(rpos) /* + probe_offset.z */ ;
+              measured_z -= get_z_correction(rpos) /* + probe.offset.z */ ;
 
               if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR_F("   final >>>---> ", measured_z, 7);
 
@@ -1534,9 +1546,9 @@
           zig_zag ^= true;
         }
       }
-      STOW_PROBE();
+      probe.stow();
       #ifdef Z_AFTER_PROBING
-        move_z_after_probing();
+        probe.move_z_after_probing();
       #endif
 
       if (abort_flag || finish_incremental_LSF(&lsf_results)) {
@@ -1623,7 +1635,7 @@
           auto debug_pt = [](PGM_P const pre, const xy_pos_t &pos, const float &zadd) {
             d_from(); serialprintPGM(pre);
             DEBUG_ECHO_F(normed(pos, zadd), 6);
-            DEBUG_ECHOLNPAIR_F("   Z error: ", zadd - get_z_correction(pos), 6);
+            DEBUG_ECHOLNPAIR_F("   Z error = ", zadd - get_z_correction(pos), 6);
           };
           debug_pt(PSTR("1st point: "), probe_pt[0], normal.z * z1);
           debug_pt(PSTR("2nd point: "), probe_pt[1], normal.z * z2);
@@ -1632,7 +1644,7 @@
           DEBUG_ECHOLNPAIR_F("0 : ", normed(safe_homing_xy, 0), 6);
           d_from(); DEBUG_ECHOPGM("safe home with Z=");
           DEBUG_ECHOLNPAIR_F("mesh value ", normed(safe_homing_xy, get_z_correction(safe_homing_xy)), 6);
-          DEBUG_ECHOPAIR("   Z error: (", Z_SAFE_HOMING_X_POINT, ",", Z_SAFE_HOMING_Y_POINT);
+          DEBUG_ECHOPAIR("   Z error = (", Z_SAFE_HOMING_X_POINT, ",", Z_SAFE_HOMING_Y_POINT);
           DEBUG_ECHOLNPAIR_F(") = ", get_z_correction(safe_homing_xy), 6);
         #endif
       } // DEBUGGING(LEVELING)
@@ -1722,7 +1734,7 @@
       adjust_mesh_to_mean(g29_c_flag, g29_constant);
 
       #if HAS_BED_PROBE
-        SERIAL_ECHOLNPAIR_F("Probe Offset M851 Z", probe_offset.z, 7);
+        SERIAL_ECHOLNPAIR_F("Probe Offset M851 Z", probe.offset.z, 7);
       #endif
 
       SERIAL_ECHOLNPAIR("MESH_MIN_X  " STRINGIFY(MESH_MIN_X) "=", MESH_MIN_X); serial_delay(50);
