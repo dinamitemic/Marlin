@@ -165,6 +165,20 @@
 //#define PS_ON_PIN          PE11
 //#define KILL_PIN           PC5
 
+//
+//Neopixel LEDs definitions
+//
+#if ENABLED(NEOPIXEL_LED)
+  #ifdef NEOPIXEL_PIN
+    //#undef NEOPIXEL_PIN // Defined in Configuration.h as default value
+    //#define NEOPIXEL_PIN       PA7
+  #endif
+  #ifdef NEOPIXEL2_PIN
+    //#undef NEOPIXEL2_PIN
+    //#define NEOPIXEL2_PIN       PA7
+  #endif
+#endif
+
 #define SDSS               PA4
 #define SD_DETECT_PIN  	   PB10
 
