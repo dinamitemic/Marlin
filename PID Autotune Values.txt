@@ -1,4 +1,4 @@
--------BED-------
+-------BED@50°C-------
 READ:  bias: 54 d: 54 min: 49.90 max: 50.07 Ku: 810.29 Tu: 10.56
 READ:  No overshoot
 READ:  Kp: 162.06 Ki: 30.69 Kd: 570.50
@@ -6,6 +6,14 @@ READ: PID Autotune finished! Put the last Kp, Ki and Kd constants from below int
 READ: #define DEFAULT_bedKp 162.06
 READ: #define DEFAULT_bedKi 30.69
 READ: #define DEFAULT_bedKd 570.50
+-------BED@80°C-------
+READ:  bias: 166 d: 88 min: 79.96 max: 80.17 Ku: 1079.85 Tu: 24.32
+READ:  No overshoot
+READ:  Kp: 215.97 Ki: 17.76 Kd: 1750.87
+READ: PID Autotune finished! Put the last Kp, Ki and Kd constants from below into Configuration.h
+READ: #define DEFAULT_bedKp 215.97
+READ: #define DEFAULT_bedKi 17.76
+READ: #define DEFAULT_bedKd 1750.87
 
 -----HOTEND------
 READ:  bias: 85 d: 85 min: 196.79 max: 203.85 Ku: 30.64 Tu: 33.76
