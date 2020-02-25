@@ -143,9 +143,11 @@
 //
 #define HEATER_0_PIN       PB3
 #define HEATER_1_PIN       PB4
-#define HEATER_2_PIN       PB15
-#define HEATER_BED_PIN     PC8
-
+#define HEATER_2_PIN       PC8    //was PB15
+#define HEATER_BED_PIN     PB15    //was PC8
+//Swapped because I've connected an external MOSFET 
+//to this pin instead of on HBED connector. 
+//That way I don't need to wire extra power.
 #define FAN_PIN            PB0
 #define FAN1_PIN           PB1
 #define FAN2_PIN           PB2
