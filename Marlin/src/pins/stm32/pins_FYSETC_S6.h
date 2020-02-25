@@ -169,13 +169,11 @@
 //Neopixel LEDs definitions
 //
 #if ENABLED(NEOPIXEL_LED)
-  #ifdef NEOPIXEL_PIN
-    //#undef NEOPIXEL_PIN // Defined in Configuration.h as default value
-    //#define NEOPIXEL_PIN       PA7
+  #ifndef NEOPIXEL_PIN
+    #define NEOPIXEL_PIN       PA2
   #endif
-  #ifdef NEOPIXEL2_PIN
-    //#undef NEOPIXEL2_PIN
-    //#define NEOPIXEL2_PIN       PA7
+  #ifdef NEOPIXEL2_TYPE
+    #define NEOPIXEL2_PIN      PA1
   #endif
 #endif
 
