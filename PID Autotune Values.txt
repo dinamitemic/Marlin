@@ -23,3 +23,12 @@ READ: PID Autotune finished! Put the last Kp, Ki and Kd constants from below int
 READ: #define DEFAULT_Kp 18.38
 READ: #define DEFAULT_Ki 1.09
 READ: #define DEFAULT_Kd 77.58
+
+-----HOTEND@210°c------
+READ:  bias: 89 d: 89 min: 205.62 max: 213.75 Ku: 27.89 Tu: 35.36
+READ:  Classic PID 
+READ:  Kp: 16.74 Ki: 0.95 Kd: 73.98
+READ: PID Autotune finished! Put the last Kp, Ki and Kd constants from below into Configuration.h
+READ: #define DEFAULT_Kp 16.74
+READ: #define DEFAULT_Ki 0.95
+READ: #define DEFAULT_Kd 73.98
